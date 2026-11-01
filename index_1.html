@@ -1,0 +1,1272 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>読み道場</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout: a single column "practice sheet". Questions sit on kanji-practice grid cells (dashed cross guides), everything else stays quiet. */
+:root{
+  --bg:#edf0f4; --surface:#ffffff; --ink:#18212d; --muted:#5b6777; --line:#d3d9e1;
+  --accent:#2c4a8e; --accent-ink:#ffffff; --accent-soft:#e1e8f6;
+  --ok:#1b7548; --ok-bg:#e0f2e8; --ng:#b0321d; --ng-bg:#fbe6e1;
+  --grid:#b9c3d1; --cell:#f8f9fb;
+  --f-kanji:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho","MS PMincho",serif;
+  --f-ui:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic","Meiryo",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f141b; --surface:#19212b; --ink:#e7ebf1; --muted:#9aa6b5; --line:#2b3542;
+  --accent:#93acea; --accent-ink:#0e1522; --accent-soft:#222f4a;
+  --ok:#74d7a4; --ok-bg:#16301f; --ng:#ff9d89; --ng-bg:#3b1e19;
+  --grid:#3d4a5b; --cell:#141b24; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f141b; --surface:#19212b; --ink:#e7ebf1; --muted:#9aa6b5; --line:#2b3542;
+  --accent:#93acea; --accent-ink:#0e1522; --accent-soft:#222f4a;
+  --ok:#74d7a4; --ok-bg:#16301f; --ng:#ff9d89; --ng-bg:#3b1e19;
+  --grid:#3d4a5b; --cell:#141b24; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.6;
+  padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2{margin:0;font-weight:700}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{font-family:var(--f-kanji);font-size:34px;font-weight:700;letter-spacing:.06em;line-height:1.1}
+.sub{color:var(--muted);font-size:13px;margin-top:4px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:4px 12px;font-size:13px;font-variant-numeric:tabular-nums}
+.chip b{font-size:16px}
+.label{font-size:12px;letter-spacing:.12em;color:var(--muted);font-weight:700}
+.levels{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lv{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 16px;font-weight:700;min-width:64px}
+.lv{display:flex;flex-direction:column;align-items:center;line-height:1.25;min-width:68px;padding:6px 10px}
+.lv small{font-weight:400;font-size:11px;opacity:.8}
+.presets{display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:13px}
+.lv[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.modes{display:grid;gap:10px}
+.mode{display:grid;grid-template-columns:auto 1fr auto;gap:4px 14px;align-items:center;text-align:left;
+  background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;width:100%}
+.mode:hover{border-color:var(--accent)}
+.mode .glyph{grid-row:span 2;font-family:var(--f-kanji);font-size:30px;font-weight:700;color:var(--accent);width:44px;text-align:center}
+.mode .t{font-weight:700;font-size:16px}
+.mode .d{color:var(--muted);font-size:13px}
+.mode .n{font-variant-numeric:tabular-nums;font-size:13px;color:var(--muted);grid-row:span 2;text-align:right}
+.mode .bar{grid-column:2/4;height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.mode .bar i{display:block;height:100%;background:var(--ok)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.act{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;text-align:left;min-width:0}
+.act:hover:not(:disabled){border-color:var(--accent)}
+.act:disabled{opacity:.55;cursor:default}
+.act .t{font-weight:700}
+.act .d{color:var(--muted);font-size:13px}
+.act.hot{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.act.hot .d{color:inherit;opacity:.85}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding-block:12px}
+.stats div{text-align:center}
+.stats b{display:block;font-size:22px;font-variant-numeric:tabular-nums;line-height:1.3}
+.stats span{font-size:12px;color:var(--muted)}
+.foot{color:var(--muted);font-size:12px;display:flex;gap:12px;justify-content:space-between;flex-wrap:wrap}
+.link{background:none;border:0;padding:4px 0;color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+.bar-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ghost{background:none;border:1px solid var(--line);border-radius:8px;padding:6px 12px}
+.meter{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent);transition:width .25s}
+.meter.time i{transition:width .1s linear}
+.qcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 16px;display:flex;flex-direction:column;gap:16px;align-items:center}
+.tag{font-size:12px;letter-spacing:.1em;color:var(--muted);font-weight:700;align-self:flex-start}
+.cells{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;max-width:100%}
+.cell{--cs:min(80px,calc((100vw - 90px)/var(--n)));width:var(--cs);height:var(--cs);display:grid;place-items:center;
+  font-family:var(--f-kanji);font-size:calc(var(--cs)*.66);font-weight:500;background-color:var(--cell);border:1px solid var(--grid);
+  background-image:repeating-linear-gradient(to bottom,var(--grid) 0 4px,transparent 4px 8px),repeating-linear-gradient(to right,var(--grid) 0 4px,transparent 4px 8px);
+  background-size:1px 100%,100% 1px;background-position:center,center;background-repeat:no-repeat;line-height:1}
+.cell span{background:var(--cell);padding:0 1px;border-radius:2px}
+.prompt{margin:0;text-align:center;font-weight:500}
+.prompt small{display:block;color:var(--muted);font-size:12.5px;font-weight:400}
+form{display:flex;gap:8px;width:100%}
+input[type=text],input[type=search]{flex:1;min-width:0;font:inherit;font-size:20px;padding:10px 14px;border-radius:8px;border:1px solid var(--grid);background:var(--cell);color:var(--ink)}
+.primary{background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:10px 18px;font-weight:700;white-space:nowrap}
+.primary:disabled{opacity:.5}
+.fb{width:100%;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.fb.ok{background:var(--ok-bg);color:var(--ok)}
+.fb.ng{background:var(--ng-bg);color:var(--ng)}
+.fb .h{font-weight:700;font-size:17px}
+.fb .a{font-family:var(--f-kanji);font-size:22px;font-weight:700;color:var(--ink)}
+.fb .m{color:var(--ink);font-size:13.5px}
+.next{align-self:stretch}
+.score{font-variant-numeric:tabular-nums;font-weight:700}
+.result{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:24px 16px;text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center}
+.big{font-family:var(--f-kanji);font-size:56px;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.list li{display:grid;grid-template-columns:auto 1fr;gap:2px 14px;align-items:baseline;padding:10px 4px;border-bottom:1px solid var(--line)}
+.list .k{font-family:var(--f-kanji);font-size:24px;font-weight:700}
+.list .r{min-width:0;overflow-wrap:anywhere}
+.list .m{color:var(--muted);font-size:13px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tab{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 14px}
+.tab[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700}
+.tools{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.tools label{display:flex;gap:6px;align-items:center;font-size:13px}
+.book li{grid-template-columns:minmax(52px,auto) 1fr auto;cursor:pointer}
+.book.hide .r .rd{visibility:hidden}
+.book.hide li.open .r .rd{visibility:visible}
+.st{font-size:11.5px;border-radius:999px;padding:1px 9px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.st.mastered{color:var(--ok);background:var(--ok-bg);border-color:transparent}
+.st.review{color:var(--ng);background:var(--ng-bg);border-color:transparent}
+.st.learning{color:var(--accent);background:var(--accent-soft);border-color:transparent}
+.empty{color:var(--muted);text-align:center;padding:24px 0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:420px){.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap" id="app"></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- helpers ---------- */
+var kata2hira=function(s){return s.replace(/[ァ-ヶ]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-0x60)})};
+var norm=function(s){return kata2hira(String(s).normalize("NFKC").replace(/[\s.\-・]/g,""))};
+var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})};
+var $=function(id){return document.getElementById(id)};
+
+/* ---------- data (漢検の配当漢字に基づく級分け) ---------- */
+var CS=[
+  [10,"一右雨円王音下火花貝学気九休玉金空月犬見五口校左三山子四糸字耳七車手十出女小上森人水正生青夕石赤千川先早草足村大男竹中虫町天田土二日入年白八百文木本名目立力林六"],
+  [9,"引羽雲園遠何科夏家歌画回会海絵外角楽活間丸岩顔汽記帰弓牛魚京強教近兄形計元言原戸古午後語工公広交光考行高黄合谷国黒今才細作算止市矢姉思紙寺自時室社弱首秋週春書少場色食心新親図数西声星晴切雪船線前組走多太体台地池知茶昼長鳥朝直通弟店点電刀冬当東答頭同道読内南肉馬売買麦半番父風分聞米歩母方北毎妹万明鳴毛門夜野友用曜来里理話"],
+  [8,"悪安暗医委意育員院飲運泳駅央横屋温化荷界開階寒感漢館岸起期客究急級宮球去橋業曲局銀区苦具君係軽血決研県庫湖向幸港号根祭皿仕死使始指歯詩次事持式実写者主守取酒受州拾終習集住重宿所暑助昭消商章勝乗植申身神真深進世整昔全相送想息速族他打対待代第題炭短談着注柱丁帳調追定庭笛鉄転都度投豆島湯登等動童農波配倍箱畑発反坂板皮悲美鼻筆氷表秒病品負部服福物平返勉放味命面問役薬由油有遊予羊洋葉陽様落流旅両緑礼列練路和"],
+  [7,"愛案以衣位茨印英栄媛塩岡億加果貨課芽賀改械害街各覚潟完官管関観願岐希季旗器機議求泣給挙漁共協鏡競極熊訓軍郡群径景芸欠結建健験固功好香候康佐差菜最埼材崎昨札刷察参産散残氏司試児治滋辞鹿失借種周祝順初松笑唱焼照城縄臣信井成省清静席積折節説浅戦選然争倉巣束側続卒孫帯隊達単置仲沖兆低底的典伝徒努灯働特徳栃奈梨熱念敗梅博阪飯飛必票標不夫付府阜富副兵別辺変便包法望牧末満未民無約勇要養浴利陸良料量輪類令冷例連老労録"],
+  [6,"圧囲移因永営衛易益液演応往桜可仮価河過快解格確額刊幹慣眼紀基寄規喜技義逆久旧救居許境均禁句型経潔件険検限現減故個護効厚耕航鉱構興講告混査再災妻採際在財罪殺雑酸賛士支史志枝師資飼示似識質舎謝授修述術準序招証象賞条状常情織職制性政勢精製税責績接設絶祖素総造像増則測属率損貸態団断築貯張停提程適統堂銅導得毒独任燃能破犯判版比肥非費備評貧布婦武復複仏粉編弁保墓報豊防貿暴脈務夢迷綿輸余容略留領歴"],
+  [5,"胃異遺域宇映延沿恩我灰拡革閣割株干巻看簡危机揮貴疑吸供胸郷勤筋系敬警劇激穴券絹権憲源厳己呼誤后孝皇紅降鋼刻穀骨困砂座済裁策冊蚕至私姿視詞誌磁射捨尺若樹収宗就衆従縦縮熟純処署諸除承将傷障蒸針仁垂推寸盛聖誠舌宣専泉洗染銭善奏窓創装層操蔵臓存尊退宅担探誕段暖値宙忠著庁頂腸潮賃痛敵展討党糖届難乳認納脳派拝背肺俳班晩否批秘俵腹奮並陛閉片補暮宝訪亡忘棒枚幕密盟模訳郵優預幼欲翌乱卵覧裏律臨朗論"],
+  [4,"雅仰扇丹朱販握称鮮脚与汗抵扱跡慢肪脂甘普網紋彩奇荒抗更露況淡兼陰依威為偉違維緯雷範怒翼柄奥幾忙抱致惨到壱暇稲乾祈戒芋劣俗療隠伺浮薄謡征拍撃訴腕趣項占麗沢騒恵壊鋭影描越縁豪獲援煙鉛汚尾御雄押駆巨冒被盤丘侵憶釈遅贈襲凶怖恐郎踊跳躍驚鬼欄慮凡及菓箇介刈皆却替鑑屈輝離較壁圏畳飾傾微肩堅互傍彼姓髪唐絡枯狩燥含勧監歓環儀戯詰朽拠距狭叫狂響迎霧掘曇軒玄詳継誇鼓娘恋濃攻恒惑倒腰尽是込暦婚鎖咲歳載剤杯避爆刺敏寂旨芝伺紫雌弐敷舗茂繁獣滴沈隷稿瞬浸斜煮旬巡盾召床沼紹丈即殖触濁徴振慎寝震薪陣尋殿途吹透僧添漫耐脱妙拓般匹蓄猛闘端弾頼黙為恥珍遣捕疲吐突堤粒摘渡奴桃盗塔悩峠溶齢隣泊輩鈍嘆涙抜眠烈膚噴盆罰幅浜払搬賦舞峰坊砲矛帽誉"],
+  [3,"哀遇遭敢飽揚哲晶欺畔焦篤孔坑零怪錯粗慌慰房粋慨牲犠埋憩廉誘礎碑擁乙慈凍稚寿尿縛忌卑湾鋳炉又憂餓斥濫奉請詠宴伐殴虚獄促催奪諾巧免恨湿潤悦閲蛮択炎欧覆遂概陵措怠鎮抑惜排穏墜脅衰斤没赴徐逮愚卸了佳架華掛嫁悔塊該畜顧換芳掲拘郭隔穫岳匿伏託債炊賢幽擦硬緊辱滑克糧鐘摂辛甲冠苗猟肝勘貫喚緩企軌既姫棋棄騎菊聴契鍛吉喫胆虐弧峡刑凝裂偶鯨崩癖邦絞桑削啓携鶏倹幻孤雇悟娯綱酵超殊如紺魂墾祉封隆搾訂撮侍妨漂暫施諮軸慕陪随遵卓疾締邪赦籍匠昇掌衝冗錠嬢譲嘱伸審陳穂酔髄陶魅墨瀬婿隻潜繕阻双掃葬憎賊某胎帝袋滞楼滝霊壇窒駐抽彫吏募厘粘斗塗痘乏伴豚浪倣泌縫錬婆魔墳謀簿膜励裸胞帆藩翻符膨紛滅漏揺廊"],
+  [2.5,"亜肯暁購崇騰彰顕厄麻糾詐亭享充堀侮昆劾泡尼剰遍羅藻肖濯併尉蛇唯閥癒嚇憤逝艦勲寧甚懐悼戻逸斎偽矯緒挑勅嫌姻韻飢栽稼偵喪渦涼吟衷拷撲抄遷謄訟洞疎督畝恭浦憾煩漆患愁江疫謁朴虜襟垣猿凹翁逐庶紳舶洪培槽痴荘惰泰伯虞妥陥堕喝庸禍靴寡蚊拐賄涯還薫懸渉核殻礁桟傘累塁棟剛頑偏括渇褐轄且枢缶窯瓶醸迭逓棺堪款閑寛肌碁宜擬妃祥朕菌酷侯臭窮拒据浄挟慶雰刃琴謹貢隅茎砕唇履衡酌盲呉尚蛍渓抹傑献謙繭弦岬耗溝摩艇薦懲懇唆斉宰遮索捜爵壮酢析剖挿諭杉漸肢嗣漬賜璽頻頒醜殉循賓淑繊忍渋呈霜僕珠儒囚汁酬銃叔粛塾俊准叙升症宵硝粧詔奨償貞壌津銘譜娠診迅妊帥睡鈴廃撤漠磨誓拙窃幣仙栓旋践禅軟租塑曹駄倫扶但竜沸棚愉屯酪秩弔嫡眺釣塚弊僚寮罷附賠筒凸坪紡廷邸泥徹搭悠融扉把猶媒猫覇奔鉢披裕丙俸塀褒妄柳"],
+  [2,"挨曖藍亀詮爽瞭諦顎憬憧嘲旦玩傲宛彙彚艶痕踪弄氾汎淫弥羨妖摯嵐闇畏萎椅那韓苛戴戚詣溺冶煎采窟咽臼堆填塡唄鬱椎怨餌俺旺蓋蔽梗沃臆勃汰惧慄鍋牙瓦楷潰諧骸崖貌柿鍵䇳箋鶴嗅賭籠瘍曽膳葛桁頃錮脇釜鎌辣串稽𥡴乞伎毀畿裾頬頰斬巾僅錦駒拉挫昧冥蔑頓隙尻蹴拳舷股虎勾虹喉痩緻沙塞遡柵刹拶喩喻醒凄狙恣叱𠮟拭嫉膝須呪腫袖羞丼訃芯枕腎誰腺脊爪捉妬遜唾璧貪綻肘酎箸貼捗捻瞳藤眉侶剥剝謎匂罵哺蜂斑蜜麓餅麺睦賂湧璃瑠呂"],
+];
+/* 熟語: 漢字|読み(/で複数)|意味|JLPT(任意) */
+var JT=`学校|がっこう|school|5
+先生|せんせい|teacher|5
+学生|がくせい|student|5
+時間|じかん|time|5
+電話|でんわ|telephone|5
+電車|でんしゃ|train|5
+友達|ともだち|friend|5
+毎日|まいにち|every day|5
+今日|きょう/こんにち|today|5
+来週|らいしゅう|next week|5
+今月|こんげつ|this month|5
+大学|だいがく|university|5
+会社|かいしゃ|company|5
+天気|てんき|weather|5
+元気|げんき|healthy, well|5
+病院|びょういん|hospital|5
+銀行|ぎんこう|bank|5
+外国|がいこく|foreign country|5
+日本語|にほんご|Japanese language|5
+午前|ごぜん|a.m.|5
+午後|ごご|p.m.|5
+名前|なまえ|name|5
+家族|かぞく|family|5
+公園|こうえん|park|5
+野菜|やさい|vegetables|5
+新聞|しんぶん|newspaper|5
+映画|えいが|movie|5
+勉強|べんきょう|study|5
+質問|しつもん|question|4
+旅行|りょこう|travel|4
+運動|うんどう|exercise|4
+運転|うんてん|driving|4
+教室|きょうしつ|classroom|4
+研究|けんきゅう|research|4
+工場|こうじょう|factory|4
+計画|けいかく|plan|4
+経済|けいざい|economy|4
+結婚|けっこん|marriage|4
+去年|きょねん|last year|4
+昨日|きのう/さくじつ|yesterday|4
+今朝|けさ|this morning|4
+部屋|へや|room|4
+場所|ばしょ|place|4
+特別|とくべつ|special|4
+会議|かいぎ|meeting|4
+試験|しけん|exam|4
+自転車|じてんしゃ|bicycle|4
+地震|じしん|earthquake|4
+医者|いしゃ|doctor|4
+趣味|しゅみ|hobby|4
+図書館|としょかん|library|4
+経験|けいけん|experience|3
+習慣|しゅうかん|habit|3
+関係|かんけい|relationship|3
+状況|じょうきょう|situation|3
+条件|じょうけん|condition|3
+意見|いけん|opinion|3
+将来|しょうらい|future|3
+準備|じゅんび|preparation|3
+環境|かんきょう|environment|3
+成功|せいこう|success|3
+責任|せきにん|responsibility|3
+相談|そうだん|consultation|3
+反対|はんたい|opposition|3
+理由|りゆう|reason|3
+説明|せつめい|explanation|3
+練習|れんしゅう|practice|3
+約束|やくそく|promise|3
+予約|よやく|reservation|3
+無理|むり|impossible|3
+努力|どりょく|effort|3
+文化|ぶんか|culture|3
+技術|ぎじゅつ|technology|3
+大人|おとな|adult|3
+果物|くだもの|fruit|3
+景色|けしき|scenery|3
+上手|じょうず|skilled|3
+下手|へた|unskilled|3
+今年|ことし|this year|3
+時計|とけい|clock|3
+迷子|まいご|lost child|3
+眼鏡|めがね|glasses|3
+左右|さゆう|left and right
+上下|じょうげ|up and down
+入学|にゅうがく|entering school
+休日|きゅうじつ|day off
+出口|でぐち|exit
+五月|ごがつ|May
+十月|じゅうがつ|October
+青空|あおぞら|blue sky
+夕日|ゆうひ|evening sun
+森林|しんりん|forest
+女子|じょし|girl
+男子|だんし|boy
+草花|くさばな|plants and flowers
+赤字|あかじ|deficit
+千円|せんえん|1,000 yen
+正月|しょうがつ|New Year
+本日|ほんじつ|today (formal)
+火山|かざん|volcano
+水田|すいでん|rice paddy
+早足|はやあし|quick pace
+七夕|たなばた|Tanabata festival
+小雨|こさめ|light rain
+山林|さんりん|mountain forest
+雲海|うんかい|sea of clouds
+汽車|きしゃ|steam train
+帰国|きこく|return to one's country
+絵本|えほん|picture book
+親友|しんゆう|close friend
+数学|すうがく|mathematics
+作文|さくぶん|composition
+通学|つうがく|commuting to school
+明日|あした/あす|tomorrow
+毎年|まいとし|every year
+雪国|ゆきぐに|snow country
+親切|しんせつ|kind
+地図|ちず|map
+音楽|おんがく|music
+学習|がくしゅう|learning
+勝利|しょうり|victory
+宿題|しゅくだい|homework
+写真|しゃしん|photograph
+都市|とし|city
+登山|とざん|mountain climbing
+感動|かんどう|being moved
+神社|じんじゃ|shrine
+電気|でんき|electricity
+決定|けってい|decision
+食事|しょくじ|meal
+全体|ぜんたい|whole
+世界|せかい|world
+結果|けっか|result
+季節|きせつ|season
+目的|もくてき|purpose
+協力|きょうりょく|cooperation
+要求|ようきゅう|demand
+変化|へんか|change
+参加|さんか|participation
+完成|かんせい|completion
+失敗|しっぱい|failure
+希望|きぼう|hope
+無料|むりょう|free of charge
+確認|かくにん|confirmation
+現在|げんざい|present
+解決|かいけつ|solution
+輸入|ゆにゅう|import
+輸出|ゆしゅつ|export
+義務|ぎむ|duty
+国際|こくさい|international
+貿易|ぼうえき|trade
+財産|ざいさん|property
+保険|ほけん|insurance
+構成|こうせい|composition
+検査|けんさ|inspection
+興味|きょうみ|interest
+講義|こうぎ|lecture
+宇宙|うちゅう|space
+危険|きけん|danger
+簡単|かんたん|simple
+郵便|ゆうびん|mail
+論文|ろんぶん|thesis
+批判|ひはん|criticism
+優勝|ゆうしょう|championship
+宗教|しゅうきょう|religion
+勤務|きんむ|work duty
+尊敬|そんけい|respect
+警察|けいさつ|police
+看護|かんご|nursing
+認識|にんしき|recognition
+握手|あくしゅ|handshake
+違反|いはん|violation
+影響|えいきょう|influence
+偉大|いだい|great
+依頼|いらい|request
+抱負|ほうふ|aspiration
+誇張|こちょう|exaggeration
+縁起|えんぎ|omen
+獲得|かくとく|acquisition
+援助|えんじょ|assistance
+汚染|おせん|pollution
+驚異|きょうい|wonder
+恐怖|きょうふ|fear
+跳躍|ちょうやく|jump
+距離|きょり|distance
+傾向|けいこう|tendency
+堅実|けんじつ|steady
+相互|そうご|mutual
+傍観|ぼうかん|looking on
+鼓動|こどう|heartbeat
+恋愛|れんあい|romance
+濃度|のうど|concentration
+攻撃|こうげき|attack
+恒例|こうれい|customary
+惑星|わくせい|planet
+倒産|とうさん|bankruptcy
+尽力|じんりょく|effort
+鎖国|さこく|national isolation
+歳月|さいげつ|years
+薬剤|やくざい|drug
+避難|ひなん|evacuation
+爆発|ばくはつ|explosion
+刺激|しげき|stimulus
+敏感|びんかん|sensitive
+趣旨|しゅし|purport
+敷地|しきち|site, lot
+舗装|ほそう|paving
+繁栄|はんえい|prosperity
+獣医|じゅうい|veterinarian
+沈黙|ちんもく|silence
+原稿|げんこう|manuscript
+瞬間|しゅんかん|moment
+浸透|しんとう|permeation
+斜面|しゃめん|slope
+巡回|じゅんかい|patrol
+繁殖|はんしょく|breeding
+振動|しんどう|vibration
+慎重|しんちょう|careful
+寝室|しんしつ|bedroom
+震災|しんさい|earthquake disaster
+添付|てんぷ|attachment
+漫画|まんが|comic
+耐久|たいきゅう|durability
+脱出|だっしゅつ|escape
+蓄積|ちくせき|accumulation
+猛烈|もうれつ|fierce
+闘争|とうそう|struggle
+弾力|だんりょく|elasticity
+遭遇|そうぐう|encounter
+哲学|てつがく|philosophy
+焦点|しょうてん|focus
+錯覚|さっかく|illusion
+粗末|そまつ|poor, crude
+犠牲|ぎせい|sacrifice
+凍結|とうけつ|freezing
+寿命|じゅみょう|lifespan
+湾岸|わんがん|bay coast
+憂慮|ゆうりょ|concern
+請求|せいきゅう|claim
+宴会|えんかい|banquet
+促進|そくしん|promotion
+催促|さいそく|urging
+巧妙|こうみょう|skillful
+免除|めんじょ|exemption
+閲覧|えつらん|browsing
+選択|せんたく|selection
+炎上|えんじょう|catching fire
+欧米|おうべい|Europe and America
+概念|がいねん|concept
+措置|そち|measure
+排除|はいじょ|exclusion
+脅威|きょうい|threat
+没収|ぼっしゅう|confiscation
+赴任|ふにん|taking up a post
+架空|かくう|imaginary
+畜産|ちくさん|livestock farming
+掲載|けいさい|publication
+拘束|こうそく|restraint
+隔週|かくしゅう|every other week
+債権|さいけん|credit
+賢明|けんめい|wise
+幽霊|ゆうれい|ghost
+緊張|きんちょう|tension
+硬貨|こうか|coin
+摂取|せっしゅ|intake
+猟師|りょうし|hunter
+肝心|かんじん|essential
+喚起|かんき|arousal
+緩和|かんわ|relief
+企業|きぎょう|enterprise
+棄権|きけん|abstention
+聴衆|ちょうしゅう|audience
+契約|けいやく|contract
+吉報|きっぽう|good news
+虐待|ぎゃくたい|abuse
+偶然|ぐうぜん|coincidence
+啓発|けいはつ|enlightenment
+携帯|けいたい|carrying
+倹約|けんやく|thrift
+幻想|げんそう|fantasy
+雇用|こよう|employment
+娯楽|ごらく|entertainment
+訂正|ていせい|correction
+妨害|ぼうがい|obstruction
+施設|しせつ|facility
+諮問|しもん|consultation
+随筆|ずいひつ|essay
+疾病|しっぺい|disease
+締結|ていけつ|conclusion
+昇進|しょうしん|promotion
+衝撃|しょうげき|shock
+審査|しんさ|examination
+陳列|ちんれつ|display
+陶器|とうき|pottery
+魅力|みりょく|charm
+阻止|そし|prevention
+掃除|そうじ|cleaning
+葬式|そうしき|funeral
+滞在|たいざい|stay
+駐車|ちゅうしゃ|parking
+抽象|ちゅうしょう|abstraction
+彫刻|ちょうこく|sculpture
+募集|ぼしゅう|recruitment
+浪費|ろうひ|waste
+翻訳|ほんやく|translation
+紛失|ふんしつ|loss
+滅亡|めつぼう|destruction
+魔法|まほう|magic
+肯定|こうてい|affirmation
+購入|こうにゅう|purchase
+顕著|けんちょ|remarkable
+詐欺|さぎ|fraud
+享受|きょうじゅ|enjoyment
+充実|じゅうじつ|fulfillment
+昆虫|こんちゅう|insect
+弾劾|だんがい|impeachment
+唯一|ゆいいつ|the only
+憤慨|ふんがい|indignation
+艦隊|かんたい|fleet
+勲章|くんしょう|medal
+逸脱|いつだつ|deviation
+偽造|ぎぞう|forgery
+矯正|きょうせい|correction
+挑戦|ちょうせん|challenge
+余韻|よいん|lingering sound
+栽培|さいばい|cultivation
+偵察|ていさつ|reconnaissance
+喪失|そうしつ|loss
+拷問|ごうもん|torture
+遷都|せんと|moving the capital
+訴訟|そしょう|lawsuit
+疎外|そがい|alienation
+督促|とくそく|demand for payment
+遺憾|いかん|regrettable
+患者|かんじゃ|patient
+哀愁|あいしゅう|pathos
+疫病|えきびょう|epidemic
+庶民|しょみん|common people
+紳士|しんし|gentleman
+洪水|こうずい|flood
+堕落|だらく|depravity
+還元|かんげん|return, reduction
+懸命|けんめい|earnest
+暗礁|あんしょう|hidden rock
+頑固|がんこ|stubborn
+醸造|じょうぞう|brewing
+擬態|ぎたい|mimicry
+窮屈|きゅうくつ|cramped
+拒否|きょひ|refusal
+浄化|じょうか|purification
+謹慎|きんしん|self-restraint
+均衡|きんこう|balance
+盲点|もうてん|blind spot
+渓谷|けいこく|ravine
+傑作|けっさく|masterpiece
+献身|けんしん|devotion
+謙虚|けんきょ|modest
+消耗|しょうもう|wear, consumption
+摩擦|まさつ|friction
+懇談|こんだん|friendly talk
+索引|さくいん|index
+捜索|そうさく|search
+壮大|そうだい|grand
+分析|ぶんせき|analysis
+解剖|かいぼう|dissection
+頻繁|ひんぱん|frequent
+殉職|じゅんしょく|dying on duty
+循環|じゅんかん|circulation
+繊維|せんい|fiber
+忍耐|にんたい|patience
+報酬|ほうしゅう|reward
+奨励|しょうれい|encouragement
+土壌|どじょう|soil
+診察|しんさつ|medical examination
+迅速|じんそく|swift
+妊娠|にんしん|pregnancy
+睡眠|すいみん|sleep
+廃止|はいし|abolition
+撤回|てっかい|withdrawal
+漠然|ばくぜん|vague
+窃盗|せっとう|theft
+軟弱|なんじゃく|weak
+租税|そぜい|taxes
+倫理|りんり|ethics
+沸騰|ふっとう|boiling
+秩序|ちつじょ|order
+弊害|へいがい|harmful effect
+賠償|ばいしょう|compensation
+邸宅|ていたく|mansion
+徹底|てってい|thoroughness
+搭乗|とうじょう|boarding
+融合|ゆうごう|fusion
+把握|はあく|grasp
+猶予|ゆうよ|grace period
+媒介|ばいかい|mediation
+奔走|ほんそう|running about
+披露|ひろう|announcement
+妄想|もうそう|delusion
+挨拶|あいさつ|greeting
+曖昧|あいまい|vague
+亀裂|きれつ|crack
+詮索|せんさく|prying
+爽快|そうかい|refreshing
+嘲笑|ちょうしょう|ridicule
+傲慢|ごうまん|arrogance
+宛名|あてな|addressee
+痕跡|こんせき|trace
+汎用|はんよう|general-purpose
+妖精|ようせい|fairy
+畏怖|いふ|awe
+萎縮|いしゅく|shrinking
+椅子|いす|chair
+韓国|かんこく|South Korea
+憂鬱|ゆううつ|gloom
+旺盛|おうせい|vigorous
+隠蔽|いんぺい|concealment
+臆病|おくびょう|cowardly
+勃発|ぼっぱつ|outbreak
+危惧|きぐ|apprehension
+楷書|かいしょ|regular script
+変貌|へんぼう|transformation
+腫瘍|しゅよう|tumor
+葛藤|かっとう|conflict
+稽古|けいこ|practice
+毀損|きそん|damage
+蔑視|べっし|contempt
+勾配|こうばい|slope
+緻密|ちみつ|precise
+刹那|せつな|instant
+比喩|ひゆ|metaphor
+恣意|しい|arbitrariness
+嫉妬|しっと|jealousy
+羞恥|しゅうち|shame
+訃報|ふほう|death notice
+腎臓|じんぞう|kidney
+脊髄|せきずい|spinal cord
+遜色|そんしょく|inferiority
+罵倒|ばとう|abuse
+哺乳|ほにゅう|nursing
+捻挫|ねんざ|sprain
+拉致|らち|abduction
+挫折|ざせつ|setback
+頓着|とんちゃく|concern
+隙間|すきま|gap
+玩具|がんぐ|toy
+貪欲|どんよく|greedy
+憧憬|しょうけい|longing
+語彙|ごい|vocabulary
+賄賂|わいろ|bribe
+僧侶|そうりょ|Buddhist priest
+煩悩|ぼんのう|worldly desires`;
+/* 送りがなの語 */
+var WT=`食べる|たべる|to eat|5
+飲む|のむ|to drink|5
+見る|みる|to see|5
+聞く|きく|to hear, to ask|5
+読む|よむ|to read|5
+書く|かく|to write|5
+話す|はなす|to speak|5
+行く|いく|to go|5
+帰る|かえる|to return home|5
+買う|かう|to buy|5
+高い|たかい|high, expensive|5
+安い|やすい|cheap|5
+新しい|あたらしい|new|5
+古い|ふるい|old|5
+大きい|おおきい|big|5
+小さい|ちいさい|small|5
+長い|ながい|long|5
+短い|みじかい|short|5
+多い|おおい|many|5
+少ない|すくない|few|5
+忙しい|いそがしい|busy|4
+開ける|あける|to open|4
+閉める|しめる|to close|4
+止まる|とまる|to stop|4
+教える|おしえる|to teach|4
+覚える|おぼえる|to memorize|4
+忘れる|わすれる|to forget|4
+集める|あつめる|to collect|4
+届ける|とどける|to deliver|4
+続ける|つづける|to continue|4
+変える|かえる|to change|4
+決める|きめる|to decide|4
+比べる|くらべる|to compare|4
+払う|はらう|to pay|4
+運ぶ|はこぶ|to carry|4
+伝える|つたえる|to convey|3
+探す|さがす|to look for|3
+触る|さわる|to touch|3
+迷う|まよう|to be lost|3
+怒る|おこる/いかる|to get angry|3
+疲れる|つかれる|to get tired|3
+眠い|ねむい|sleepy|3
+恥ずかしい|はずかしい|embarrassed|3
+厳しい|きびしい|strict|3
+詳しい|くわしい|detailed|3
+優しい|やさしい|kind|3
+珍しい|めずらしい|rare|3
+出る|でる|to go out
+立つ|たつ|to stand
+休む|やすむ|to rest
+白い|しろい|white
+赤い|あかい|red
+青い|あおい|blue
+生まれる|うまれる|to be born
+引く|ひく|to pull
+歌う|うたう|to sing
+思う|おもう|to think
+作る|つくる|to make
+知る|しる|to know
+売る|うる|to sell
+帰る|かえる|to go home
+考える|かんがえる|to think over
+通う|かよう|to commute
+歩く|あるく|to walk
+走る|はしる|to run
+始まる|はじまる|to begin
+終わる|おわる|to end
+使う|つかう|to use
+持つ|もつ|to hold
+住む|すむ|to live
+乗る|のる|to ride
+受ける|うける|to receive
+落ちる|おちる|to fall
+流れる|ながれる|to flow
+登る|のぼる|to climb
+温かい|あたたかい|warm
+暗い|くらい|dark
+軽い|かるい|light
+重い|おもい|heavy
+苦しい|くるしい|painful
+悲しい|かなしい|sad
+美しい|うつくしい|beautiful
+笑う|わらう|to laugh
+試す|ためす|to try
+求める|もとめる|to seek
+争う|あらそう|to compete
+努める|つとめる|to strive
+働く|はたらく|to work
+借りる|かりる|to borrow
+治る|なおる|to heal
+勝つ|かつ|to win
+着く|つく|to arrive
+失う|うしなう|to lose
+増える|ふえる|to increase
+過ぎる|すぎる|to pass
+混ぜる|まぜる|to mix
+築く|きずく|to build
+導く|みちびく|to guide
+訪ねる|たずねる|to visit
+暮らす|くらす|to live
+越える|こえる|to cross
+押す|おす|to push
+驚く|おどろく|to be surprised
+悩む|なやむ|to worry
+浮かぶ|うかぶ|to float
+隠す|かくす|to hide
+描く|えがく|to draw
+狭い|せまい|narrow
+迎える|むかえる|to welcome
+掘る|ほる|to dig
+叫ぶ|さけぶ|to shout
+狂う|くるう|to go mad
+含む|ふくむ|to include
+傾く|かたむく|to lean
+避ける|さける|to avoid
+刺す|さす|to stab
+煮る|にる|to boil
+吹く|ふく|to blow
+頼む|たのむ|to ask
+黙る|だまる|to be silent
+抜く|ぬく|to pull out
+捕まえる|つかまえる|to catch
+溶ける|とける|to melt
+踊る|おどる|to dance
+跳ぶ|とぶ|to jump
+欺く|あざむく|to deceive
+怠ける|なまける|to be lazy
+抑える|おさえる|to suppress
+惜しい|おしい|regrettable
+衰える|おとろえる|to decline
+愚か|おろか|foolish
+悔しい|くやしい|frustrating
+硬い|かたい|hard
+貫く|つらぬく|to pierce
+鍛える|きたえる|to train
+崩れる|くずれる|to crumble
+絞る|しぼる|to squeeze
+漂う|ただよう|to drift
+譲る|ゆずる|to yield
+潜る|もぐる|to dive
+縫う|ぬう|to sew
+揺れる|ゆれる|to shake
+漏れる|もれる|to leak
+奪う|うばう|to rob
+潤う|うるおう|to be moist
+覆う|おおう|to cover
+穏やか|おだやか|calm
+慌てる|あわてる|to panic
+慰める|なぐさめる|to comfort
+憎い|にくい|hateful
+伴う|ともなう|to accompany
+励ます|はげます|to encourage
+偏る|かたよる|to lean
+渇く|かわく|to be thirsty
+涼しい|すずしい|cool
+酷い|ひどい|terrible
+挟む|はさむ|to sandwich
+漬ける|つける|to pickle
+醜い|みにくい|ugly
+渋い|しぶい|bitter, tasteful
+磨く|みがく|to polish
+誓う|ちかう|to swear
+拙い|つたない|clumsy
+眺める|ながめる|to gaze
+釣る|つる|to fish
+紡ぐ|つむぐ|to spin
+褒める|ほめる|to praise
+懐かしい|なつかしい|nostalgic
+嫌う|きらう|to dislike
+稼ぐ|かせぐ|to earn
+陥る|おちいる|to fall into
+煩わしい|わずらわしい|troublesome
+据える|すえる|to set
+遮る|さえぎる|to interrupt
+薦める|すすめる|to recommend
+償う|つぐなう|to compensate
+諭す|さとす|to admonish
+賜る|たまわる|to be granted
+弔う|とむらう|to mourn
+履く|はく|to wear on feet
+悼む|いたむ|to grieve
+諦める|あきらめる|to give up
+憧れる|あこがれる|to long for
+弄ぶ|もてあそぶ|to toy with
+羨む|うらやむ|to envy
+溺れる|おぼれる|to drown
+戴く|いただく|to receive (humble)
+嗅ぐ|かぐ|to smell
+賭ける|かける|to bet
+潰す|つぶす|to crush
+蹴る|ける|to kick
+痩せる|やせる|to lose weight
+塞ぐ|ふさぐ|to block
+遡る|さかのぼる|to go back
+狙う|ねらう|to aim
+叱る|しかる|to scold
+拭う|ぬぐう|to wipe
+腫れる|はれる|to swell
+捉える|とらえる|to grasp
+貪る|むさぼる|to devour
+綻びる|ほころびる|to come apart
+貼る|はる|to stick
+捗る|はかどる|to make progress
+剥がす|はがす|to peel off
+罵る|ののしる|to curse
+湧く|わく|to well up
+斬る|きる|to slash
+乞う|こう|to beg
+嘲る|あざける|to mock`;
+/* 漢字: 字, 音, 訓(.は送りがな), JLPT, 意味 */
+var KT=[
+["山","サン","やま",5,"mountain"],["川","セン","かわ",5,"river"],["日","ニチ,ジツ","ひ,か",5,"day, sun"],
+["月","ゲツ,ガツ","つき",5,"month, moon"],["火","カ","ひ",5,"fire"],["水","スイ","みず",5,"water"],
+["木","モク,ボク","き",5,"tree"],["金","キン,コン","かね",5,"gold, money"],["土","ド,ト","つち",5,"earth, soil"],
+["人","ジン,ニン","ひと",5,"person"],["学","ガク","まな.ぶ",5,"study"],["生","セイ,ショウ","い.きる,う.まれる,なま",5,"life, birth, raw"],
+["大","ダイ,タイ","おお.きい,おお",5,"big"],["小","ショウ","ちい.さい,こ,お",5,"small"],["先","セン","さき",5,"previous, ahead"],
+["上","ジョウ,ショウ","うえ,あ.げる,のぼ.る",5,"above"],["下","カ,ゲ","した,さ.げる,くだ.る",5,"below"],["中","チュウ,ジュウ","なか",5,"middle, inside"],
+["目","モク,ボク","め",5,"eye"],["耳","ジ","みみ",5,"ear"],["口","コウ,ク","くち",5,"mouth"],["手","シュ","て",5,"hand"],
+["足","ソク","あし,た.りる",5,"foot, to suffice"],["右","ユウ,ウ","みぎ",5,"right"],["左","サ","ひだり",5,"left"],
+["車","シャ","くるま",5,"car"],["雨","ウ","あめ",5,"rain"],["花","カ","はな",5,"flower"],["犬","ケン","いぬ",5,"dog"],
+["魚","ギョ","さかな,うお",5,"fish"],["時","ジ","とき",5,"time"],["間","カン,ケン","あいだ,ま",5,"interval, between"],
+["話","ワ","はな.す,はなし",5,"talk"],["読","ドク,トク","よ.む",5,"read"],["語","ゴ","かた.る",5,"language, tell"],["買","バイ","か.う",5,"buy"],
+["動","ドウ","うご.く",4,"move"],["働","ドウ","はたら.く",4,"work"],["教","キョウ","おし.える,おそ.わる",4,"teach"],
+["売","バイ","う.る,う.れる",4,"sell"],["持","ジ","も.つ",4,"hold"],["住","ジュウ","す.む,す.まい",4,"live, reside"],
+["思","シ","おも.う",4,"think"],["知","チ","し.る",4,"know"],["作","サク,サ","つく.る",4,"make"],["使","シ","つか.う",4,"use"],
+["歩","ホ,ブ,フ","ある.く,あゆ.む",4,"walk"],["走","ソウ","はし.る",4,"run"],["海","カイ","うみ",4,"sea"],
+["色","ショク,シキ","いろ",4,"color"],["空","クウ","そら,あ.く,から",4,"sky, empty"],["米","ベイ,マイ","こめ",4,"rice"],["道","ドウ,トウ","みち",4,"road, way"],
+["係","ケイ","かか.り,かか.る",3,"person in charge"],["決","ケツ","き.める,き.まる",3,"decide"],["流","リュウ,ル","なが.れる,なが.す",3,"flow"],
+["守","シュ,ス","まも.る,もり",3,"protect"],["続","ゾク","つづ.く,つづ.ける",3,"continue"],["配","ハイ","くば.る",3,"distribute"],
+["昔","セキ,シャク","むかし",3,"long ago"],["冷","レイ","つめ.たい,ひ.える",3,"cold"],["暗","アン","くら.い",3,"dark"],
+["軽","ケイ","かる.い",3,"light (weight)"],["重","ジュウ,チョウ","おも.い,かさ.ねる",3,"heavy, to pile up"],["声","セイ,ショウ","こえ,こわ",3,"voice"],
+["握","アク","にぎ.る",0,"grip"],["影","エイ","かげ",0,"shadow"],["依","イ,エ","よ.る",0,"depend"],["違","イ","ちが.う,ちが.える",0,"differ"],
+["偉","イ","えら.い",0,"great"],["越","エツ","こ.える,こ.す",0,"cross over"],["押","オウ","お.す,お.さえる",0,"push"],
+["驚","キョウ","おどろ.く,おどろ.かす",0,"be surprised"],["悩","ノウ","なや.む",0,"worry"],["浮","フ","う.く,う.かぶ,う.かれる",0,"float"],
+["疲","ヒ","つか.れる",0,"tired"],["触","ショク","ふ.れる,さわ.る",0,"touch"],["怒","ド","いか.る,おこ.る",0,"anger"],
+["詳","ショウ","くわ.しい",0,"detailed"],["珍","チン","めずら.しい",0,"rare"],["恥","チ","は.じる,は.ずかしい,はじ",0,"shame"],
+["眠","ミン","ねむ.る,ねむ.い",0,"sleep"],["忙","ボウ","いそが.しい",0,"busy"],["払","フツ","はら.う",0,"pay"],
+["憂","ユウ","うれ.える,う.い",0,"worry, gloom"],["欺","ギ","あざむ.く",0,"deceive"],["怠","タイ","おこた.る,なま.ける",0,"neglect"],
+["抑","ヨク","おさ.える",0,"suppress"],["惜","セキ","お.しい,お.しむ",0,"regret"],["脅","キョウ","おど.す,おびや.かす",0,"threaten"],
+["衰","スイ","おとろ.える",0,"decline"],["愚","グ","おろ.か",0,"foolish"],["悔","カイ","く.いる,く.やしい",0,"regret"],
+["硬","コウ","かた.い",0,"hard"],["貫","カン","つらぬ.く",0,"pierce"],["緩","カン","ゆる.い,ゆる.む",0,"loose"],
+["鍛","タン","きた.える",0,"forge, train"],["崩","ホウ","くず.れる,くず.す",0,"collapse"],["絞","コウ","しぼ.る,し.める",0,"squeeze"],
+["漂","ヒョウ","ただよ.う",0,"drift"],["暫","ザン","しばら.く",0,"for a while"],["譲","ジョウ","ゆず.る",0,"yield"],
+["潜","セン","ひそ.む,もぐ.る",0,"hide, dive"],["縫","ホウ","ぬ.う",0,"sew"],["揺","ヨウ","ゆ.れる,ゆ.する",0,"shake"],["漏","ロウ","も.れる,も.らす",0,"leak"],
+["偏","ヘン","かたよ.る",0,"lean to one side"],["渇","カツ","かわ.く",0,"thirsty"],["涼","リョウ","すず.しい",0,"cool"],["浦","ホ","うら",0,"bay"],
+["渦","カ","うず",0,"whirlpool"],["猿","エン","さる",0,"monkey"],["靴","カ","くつ",0,"shoes"],["蚊","ブン","か",0,"mosquito"],
+["肌","キ","はだ",0,"skin"],["窯","ヨウ","かま",0,"kiln"],["酷","コク","ひど.い",0,"cruel"],["挟","キョウ","はさ.む",0,"pinch"],
+["唇","シン","くちびる",0,"lip"],["履","リ","は.く",0,"wear on feet"],["漬","シ","つ.ける,つ.かる",0,"soak"],["醜","シュウ","みにく.い",0,"ugly"],
+["渋","ジュウ","しぶ.い",0,"astringent"],["汁","ジュウ","しる",0,"juice, soup"],["磨","マ","みが.く",0,"polish"],["誓","セイ","ちか.う",0,"swear"],
+["拙","セツ","つたな.い",0,"clumsy"],["眺","チョウ","なが.める",0,"gaze"],["釣","チョウ","つ.る",0,"fish"],["紡","ボウ","つむ.ぐ",0,"spin"],
+["泥","デイ","どろ",0,"mud"],["扉","ヒ","とびら",0,"door"],["猫","ビョウ","ねこ",0,"cat"],["褒","ホウ","ほ.める",0,"praise"],["柳","リュウ","やなぎ",0,"willow"],
+["嵐","ラン","あらし",0,"storm"],["闇","アン","やみ",0,"darkness"],["餌","ジ","えさ,え",0,"bait, feed"],["蓋","ガイ","ふた",0,"lid"],
+["牙","ガ,ゲ","きば",0,"fang"],["瓦","ガ","かわら",0,"roof tile"],["崖","ガイ","がけ",0,"cliff"],["柿","シ","かき",0,"persimmon"],
+["鍵","ケン","かぎ",0,"key"],["嗅","キュウ","か.ぐ",0,"smell"],["賭","ト","か.ける",0,"bet"],["籠","ロウ","かご,こ.もる",0,"basket"],
+["脇","キョウ","わき",0,"side, armpit"],["釜","フ","かま",0,"kettle"],["串","カン","くし",0,"skewer"],["乞","コツ","こ.う",0,"beg"],
+["裾","キョ","すそ",0,"hem"],["頬","キョウ","ほお",0,"cheek"],["斬","ザン","き.る",0,"slash"],["僅","キン","わず.か",0,"slight"],
+["錦","キン","にしき",0,"brocade"],["駒","ク","こま",0,"pawn, colt"],["虎","コ","とら",0,"tiger"],["虹","コウ","にじ",0,"rainbow"],
+["喉","コウ","のど",0,"throat"],["痩","ソウ","や.せる",0,"thin"],["塞","ソク,サイ","ふさ.ぐ,ふさ.がる",0,"block"],["狙","ソ","ねら.う",0,"aim"],
+["叱","シツ","しか.る",0,"scold"],["膝","シツ","ひざ",0,"knee"],["袖","シュウ","そで",0,"sleeve"],["枕","チン","まくら",0,"pillow"],
+["誰","スイ","だれ",0,"who"],["爪","ソウ","つめ",0,"nail"],["唾","ダ","つば",0,"spit"],["貪","ドン","むさぼ.る",0,"covet"],
+["肘","チュウ","ひじ",0,"elbow"],["箸","チョ","はし",0,"chopsticks"],["貼","チョウ","は.る",0,"stick"],["瞳","ドウ","ひとみ",0,"pupil"],
+["藤","トウ","ふじ",0,"wisteria"],["眉","ビ,ミ","まゆ",0,"eyebrow"],["剥","ハク","は.がす,は.ぐ",0,"peel"],["謎","メイ","なぞ",0,"riddle"],
+["蜂","ホウ","はち",0,"bee"],["麓","ロク","ふもと",0,"foot of a mountain"],["餅","ヘイ","もち",0,"rice cake"],["湧","ユウ","わ.く",0,"well up"]
+];
+var KX=[
+["変","ヘン","か.わる,か.える",0,"change"],["別","ベツ","わか.れる",0,"separate"],["飯","ハン","めし",0,"meal, rice"],["借","シャク","か.りる",0,"borrow"],
+["低","テイ","ひく.い",0,"low"],["求","キュウ","もと.める",0,"seek"],["笑","ショウ","わら.う,え.む",0,"laugh"],["願","ガン","ねが.う",0,"wish"],
+["失","シツ","うしな.う",0,"lose"],["伝","デン","つた.える,つた.わる",0,"transmit"],["争","ソウ","あらそ.う",0,"compete"],["試","シ","こころ.みる,ため.す",0,"try"],
+["覚","カク","おぼ.える,さ.める",0,"remember, awake"],["焼","ショウ","や.く,や.ける",0,"burn"],["浅","セン","あさ.い",0,"shallow"],["加","カ","くわ.える,くわ.わる",0,"add"],
+["選","セン","えら.ぶ",0,"choose"],["満","マン","み.ちる,み.たす",0,"full"],["老","ロウ","お.いる,ふ.ける",0,"grow old"],
+["移","イ","うつ.る,うつ.す",0,"move"],["確","カク","たし.か,たし.かめる",0,"certain"],["比","ヒ","くら.べる",0,"compare"],["険","ケン","けわ.しい",0,"steep"],
+["久","キュウ,ク","ひさ.しい",0,"long time"],["迷","メイ","まよ.う",0,"be lost"],["永","エイ","なが.い",0,"eternal"],["枝","シ","えだ",0,"branch"],
+["示","ジ,シ","しめ.す",0,"show"],["招","ショウ","まね.く",0,"invite"],["張","チョウ","は.る",0,"stretch"],["提","テイ","さ.げる",0,"carry, offer"],
+["築","チク","きず.く",0,"build"],["豊","ホウ","ゆた.か",0,"abundant"],["導","ドウ","みちび.く",0,"guide"],["混","コン","ま.ぜる,ま.じる",0,"mix"],
+["耕","コウ","たがや.す",0,"cultivate"],["防","ボウ","ふせ.ぐ",0,"defend"],["断","ダン","た.つ,ことわ.る",0,"cut off, refuse"],
+["閉","ヘイ","と.じる,し.める",0,"close"],["探","タン","さが.す,さぐ.る",0,"search"],["優","ユウ","やさ.しい,すぐ.れる",0,"gentle, superior"],
+["厳","ゲン,ゴン","きび.しい,おごそ.か",0,"strict"],["割","カツ","わ.る,さ.く",0,"divide"],["従","ジュウ","したが.う",0,"obey"],
+["縮","シュク","ちぢ.む,ちぢ.める",0,"shrink"],["預","ヨ","あず.ける,あず.かる",0,"deposit"],["訪","ホウ","おとず.れる,たず.ねる",0,"visit"],
+["忘","ボウ","わす.れる",0,"forget"],["暮","ボ","く.らす,く.れる",0,"live, dusk"],["幼","ヨウ","おさな.い",0,"young"],["敬","ケイ","うやま.う",0,"respect"],
+["推","スイ","お.す",0,"infer, recommend"],["降","コウ","お.りる,ふ.る",0,"descend, fall"],["染","セン","そ.める,し.みる",0,"dye"],
+["吸","キュウ","す.う",0,"inhale"],["呼","コ","よ.ぶ",0,"call"],["補","ホ","おぎな.う",0,"supplement"],["痛","ツウ","いた.い",0,"painful"],
+["乱","ラン","みだ.れる",0,"disorder"],["刻","コク","きざ.む",0,"carve"],["背","ハイ","せ,そむ.く",0,"back, defy"]
+];
+KT=KT.concat(KX);
+CS.push([1.5,"阿娃唖啞蛙窪逢饗蒼碧襖葵葱梧煽簸垢緋赫嬰莱萊茜昂穐龝灼亮晃彬叡燦倦厭呆偓渥鹸鹼芥曙旭詑疋葦鯵鰺翫梓畦妓娼嬉仇恰斡竺惇淳湛敦醇揖湊鳩鍾蒐輯纂蹟涜瀆姐肋虻蝱鐙膏溢蛋甜飴彪絢斐綾殆賎賤謬鮎疏蕩砿礦匪砺礪蘭蛾蟻或蕪沫粟袷憐怜杏按庵鞍伊夷倭惟蔚謂鮪亥莞猪云愈筏熔鎔凧歪碇錨郁粥戎牢屑些諌諫胡烏堰磯顛顚迄寵伍絃庄埜坐鰍狗禾祷禱荊荆楚薯藷舛函凾磐巌鰯允胤寅蔭鸚吋佑迂卯鵜蒔覗窺諜穿鴬鶯兎兔莵菟丑汐艮碓稀紗巴嘘噓裡苑槌佼蜎蝉繍蟬繡摸梁靱靭釧趨鰻姥厩廐廏厰廠膿娩楳欽卜卦瓜閏濡斌邑鱗噂廻慧荏曳洩盈瑛穎頴亦榎蝦蕃撰衿奄掩焔渕淵焰鳶燕薗鴛於牡苧笈甥姶凰鴎鴨鴦鷗鷹駈樗浩套葢蔀輿蒙狼宏甫祁恢峻渠魁碩鴻櫓鳳鵬荻托訣桶喬酋綜馴怯捺兇侠俠斧栗劫恕錘爺澱梼魯檮畢竣"]);
+CS.push([1,"丫呵哇堊婀猗椏痾鴉閼錏鐚于吁咨欸欹粤嗚嗟煕熙熈噫噯齎阨埃矮隘鞋穢藹靄靉逅盍晤逑遘覯邂覲覿喘韲齏滄黽黝蜀蔬呷絳膩赭赬殷猩蚶胝胼腁皹皸孩藜贖貲赧亢昜驤皎旻慊歉腮顋鰓賈估冏杲奐昿炳炯倬晟耿晧晢烱晣晰渙焜皖晳暘煥煌粲曄韶犖瑩瀏曠闡覈飫酲惘扼軛幄搤噁齷蔡趺跏踑翊丱扛抖掀翹蹻榕鬚衵袙苴晁痣黶蕣糺紵暾薊罔紿詒詭誣誑瞞謾爛蜊鯏哂嗤芦趾葭蘆蹤蹠跫簣桎鐐鐺騅晨蹇跖笳咀荅堋畛阡陌褪悁倡敖游遨咫冤冦寇寃讐讎捐歛暄煖煦嫗牴軋遏厖腆亶諄靦遖荐萃翕搶滔聚蔟輳簇攅攢緝斂纉纘羹誂椹諷窈窕嬋址阯迹墟裔坎穹埳嵌塹窩壙竅竇窖狎蚩褻豈嫂訐詆骭鶩腴薹蜚炙炮焙煬熹燔衍渝蜑醴繖苻霤泛洽旁浹溥潦仂畸酳贏饒汕罘罠罟罨辮餃賁綺綵黼陲馭愆瑕跌紕訛繆譌騫悍莽桀笨麁鬆糲鷙麤沐洒浣滌澡澣盪蘯灑駻樸諍畭畬璞悛釐竄霰旌垤儻粱澹醂褶并幷勠戮歙窘遑遽躁怱悤矍蚫鮑鰒卹恤矜閔愍憫晏菴諳鮟餡黯已佗矣怡苡姨洟倚恚韋帷痍渭貽幃肄痿蝟熨彜縊頤彝鰄饐懿豕藺咢吩咐曰厦廈廬雖鴿痊瘉毬霆枋柎桴槎范怎啀儼瞋嗔鵤忿怫馮慍愾閾縡澳鬻戈艟艨弋繳汪溏奕偈愒勣聊躄躃磑礫磴甃鐓矼箴碣瓷砠弩鶍鉅曷焉孰礒匆倥檻鈑雍椒巓鼬悽怛俑恫疼惆悵惻軫愴慇癆炒撓訖曁踵臻弌聿檪櫟苺莓佚軼噎鴪鴥鎰鷸憮譎佯譛譖綸綫緡縷撩鯔蝗螽嘶戌蘢秉筥誄棘篳笆溲鼾訝熏燻肬疣贅誡飭撕諱仄俚陋鄙苟兪俞逾甍蕁圦糴熬黥淹涵鑪嵒岫鰛鰮鮇尹茵恁蚓婬堙湮喑韵隕殞螾霪贇侑盂囿禹紆竽桙傴嘔齲茴筌殍秧餒饉饑嗽漱俔覘遉闖鐫鑚鑽鑿瀲苹萍蘋鰾鯎朮丕稟禀膺朶撼蹌蠕蠢驢蛆偸菲偷漓澆絅繻踞蹲濛舂潘熄鶉鷽嘯咏哥謌謳哦弍猜梲茹袿褂裲襠絛訌抃拊挌戛捶戞搗搏誅擂擣擽鏗夭妍姚姸倩娥娟婉媚綉鑠鈔徙搨愬俯靫鱓膊臂萼蒂蔕闍倆闊濶髫魘頷唸呻畴壟隴疇姆媼虔鹵褫篡簒蔗圉站皁櫪溟瀛惓孳孶筮怏鞅懊瓣糶沽售"]);
+JT+=`
+蒼白|そうはく|pale
+碧眼|へきがん|blue eyes
+緋色|ひいろ|scarlet
+昂揚|こうよう|exaltation
+灼熱|しゃくねつ|scorching heat
+燦然|さんぜん|brilliant
+倦怠|けんたい|weariness
+厭世|えんせい|pessimism
+呆然|ぼうぜん|stupefied
+曙光|しょこう|first light
+旭日|きょくじつ|rising sun
+仇討|あだうち|revenge
+蒐集|しゅうしゅう|collecting
+編纂|へんさん|compilation
+誤謬|ごびゅう|error
+放蕩|ほうとう|dissipation
+按配|あんばい|arrangement
+草庵|そうあん|thatched hut
+鞍替|くらがえ|switching sides
+所謂|いわゆる|so-called
+烏合|うごう|disorderly mob
+顛末|てんまつ|whole story
+寵愛|ちょうあい|favor
+管絃楽|かんげんがく|orchestra
+坐禅|ざぜん|Zen meditation
+祈祷|きとう|prayer
+馬鈴薯|ばれいしょ|potato
+磐石|ばんじゃく|solid rock
+木蔭|こかげ|shade of a tree
+諜報|ちょうほう|intelligence
+潮汐|ちょうせき|tides
+稀少|きしょう|rare
+脳裡|のうり|in one's mind
+御苑|ぎょえん|imperial garden
+趨勢|すうせい|trend
+厩舎|きゅうしゃ|stable
+化膿|かのう|suppuration
+欽定|きんてい|imperial decree
+閏年|うるうどし|leap year
+慧眼|けいがん|keen insight
+漏洩|ろうえい|leak
+勅撰|ちょくせん|imperially commissioned
+深淵|しんえん|abyss
+神輿|みこし|portable shrine
+啓蒙|けいもう|enlightenment
+峻険|しゅんけん|steep
+首魁|しゅかい|ringleader
+碩学|せきがく|great scholar
+托鉢|たくはつ|alms-seeking
+訣別|けつべつ|farewell
+酋長|しゅうちょう|chief
+綜合|そうごう|synthesis
+捺印|なついん|seal impression
+兇悪|きょうあく|atrocious
+億劫|おっくう|bothersome
+紡錘|ぼうすい|spindle
+沈澱|ちんでん|sedimentation
+畢生|ひっせい|lifetime
+竣工|しゅんこう|completion of construction
+隘路|あいろ|bottleneck
+矮小|わいしょう|dwarfish
+邂逅|かいこう|chance meeting
+蔬菜|そさい|vegetables
+贖罪|しょくざい|atonement
+亢進|こうしん|acceleration
+炯眼|けいがん|sharp eye
+扼殺|やくさつ|strangulation
+欺瞞|ぎまん|deception
+爛漫|らんまん|in full bloom
+燦爛|さんらん|brilliant
+冤罪|えんざい|false charge
+倭寇|わこう|Japanese pirates
+復讐|ふくしゅう|revenge
+義捐|ぎえん|donation
+諷刺|ふうし|satire
+城址|じょうし|castle ruins
+廃墟|はいきょ|ruins
+末裔|まつえい|descendant
+蒼穹|そうきゅう|blue sky
+焙煎|ばいせん|roasting
+饒舌|じょうぜつ|talkative
+餃子|ぎょうざ|dumpling
+綺麗|きれい|pretty
+精悍|せいかん|dauntless
+沐浴|もくよく|ablution
+洒落|しゃれ|joke
+改竄|かいざん|falsification
+殺戮|さつりく|slaughter
+急遽|きゅうきょ|hurriedly
+躁鬱|そううつ|manic depression
+矜持|きょうじ|pride
+憐憫|れんびん|pity
+熨斗|のし|gift wrapping strip
+憮然|ぶぜん|disappointed
+経綸|けいりん|statecraft
+燻製|くんせい|smoked food
+贅沢|ぜいたく|luxury
+固陋|ころう|obstinate
+嘔吐|おうと|vomiting
+飢饉|ききん|famine
+漱石|そうせき|Soseki
+稟議|りんぎ|circulating a proposal
+蹲踞|そんきょ|squatting
+猜疑|さいぎ|suspicion
+闊達|かったつ|open-minded
+敬虔|けいけん|devout
+懊悩|おうのう|agony
+靄|もや|mist
+霰|あられ|hail
+餡|あん|bean paste
+磯|いそ|rocky shore
+噂|うわさ|rumor
+嘘|うそ|lie`;
+WT+=`
+嬉しい|うれしい|glad
+湛える|たたえる|to fill with
+溢れる|あふれる|to overflow
+殆ど|ほとんど|almost
+或いは|あるいは|or
+憐れむ|あわれむ|to pity
+覗く|のぞく|to peek
+窺う|うかがう|to look into
+穿つ|うがつ|to dig through
+濡れる|ぬれる|to get wet
+馴染む|なじむ|to become familiar
+怯える|おびえる|to be frightened
+喘ぐ|あえぐ|to gasp
+褪せる|あせる|to fade
+嵌める|はめる|to fit in
+炙る|あぶる|to roast
+訛り|なまり|accent
+諍い|いさかい|quarrel
+窘める|たしなめる|to rebuke
+諳んじる|そらんじる|to recite from memory
+曰く|いわく|saying
+佯る|いつわる|to pretend
+嘶く|いななく|to neigh
+訝しい|いぶかしい|suspicious
+燻る|くすぶる|to smolder
+鄙びる|ひなびる|to be rustic
+蠢く|うごめく|to wriggle
+蹲る|うずくまる|to crouch
+嘯く|うそぶく|to boast
+俯く|うつむく|to look down
+頷く|うなずく|to nod
+呻く|うめく|to groan
+軋む|きしむ|to creak`;
+KT=KT.concat([
+["蒼","ソウ","あお.い",0,"pale blue"],["碧","ヘキ","あお.い,みどり",0,"deep blue"],["緋","ヒ","あか",0,"scarlet"],["溢","イツ","あふ.れる,こぼ.れる",0,"overflow"],
+["嬉","キ","うれ.しい",0,"glad"],["憐","レン","あわ.れむ",0,"pity"],["湛","タン","たた.える",0,"fill, brim"],["殆","タイ","ほとん.ど,あや.うい",0,"almost"],
+["覗","シ","のぞ.く",0,"peek"],["窺","キ","うかが.う",0,"peer"],["穿","セン","うが.つ",0,"pierce"],["濡","ジュ","ぬ.れる",0,"get wet"],
+["馴","ジュン","な.れる,な.らす",0,"become used to"],["怯","キョウ","おび.える,ひる.む",0,"be scared"],["倦","ケン","う.む,あぐ.ねる",0,"grow weary"],
+["厭","エン","いと.う,いや",0,"dislike"],["呆","ボウ","ほう.ける,あき.れる",0,"dumbfounded"],["旭","キョク","あさひ",0,"morning sun"],
+["曙","ショ","あけぼの",0,"dawn"],["汐","セキ","しお,うしお",0,"tide"],["磯","キ","いそ",0,"rocky shore"],["嘘","キョ","うそ",0,"lie"],
+["噂","ソン","うわさ",0,"rumor"],["燕","エン","つばめ",0,"swallow"],["狼","ロウ","おおかみ",0,"wolf"],["斧","フ","おの",0,"axe"],
+["栗","リツ","くり",0,"chestnut"],["桶","トウ","おけ",0,"bucket"],["爺","ヤ","じい",0,"old man"],["蟻","ギ","あり",0,"ant"],
+["鳶","エン","とんび,とび",0,"kite (bird)"],["稀","キ","まれ",0,"rare"],["閏","ジュン","うるう",0,"intercalary"],["輿","ヨ","こし",0,"palanquin"],["澱","デン","よど.む",0,"stagnate"],
+["喘","ゼン","あえ.ぐ",0,"gasp"],["靄","アイ","もや",0,"mist"],["褪","タイ","あ.せる",0,"fade"],["嵌","カン","は.める,は.まる",0,"fit in"],
+["炙","シャ","あぶ.る",0,"roast"],["諍","ソウ","いさか.い",0,"quarrel"],["窘","キン","たしな.める",0,"rebuke"],["諳","アン","そらん.じる",0,"memorize"],
+["曰","エツ","いわ.く",0,"say"],["佯","ヨウ","いつわ.る",0,"pretend"],["嘶","セイ","いなな.く",0,"neigh"],["訝","ガ","いぶか.しい",0,"doubt"],
+["燻","クン","いぶ.す,くすぶ.る",0,"smoke"],["鄙","ヒ","ひな",0,"countryside"],["蠢","シュン","うごめ.く",0,"wriggle"],["蹲","ソン","うずくま.る",0,"crouch"],
+["嘯","ショウ","うそぶ.く",0,"boast"],["俯","フ","うつむ.く",0,"look down"],["頷","ガン","うなず.く",0,"nod"],["呻","シン","うめ.く",0,"groan"],
+["霰","サン","あられ",0,"hail"],["訛","カ","なま.り",0,"dialect accent"],["軋","アツ","きし.む",0,"creak"],["餡","カン","あん",0,"bean paste"],
+["鮑","ホウ","あわび",0,"abalone"],["棘","キョク","とげ",0,"thorn"]
+]);
+var CODE={};
+CS.forEach(function(r){Array.from(r[1]).forEach(function(ch){if(!(ch in CODE))CODE[ch]=r[0]})});
+var GORDER=[10,9,8,7,6,5,4,3,2.5,2,1.5,1];
+var GL={10:"10級",9:"9級",8:"8級",7:"7級",6:"6級",5:"5級",4:"4級",3:"3級",2.5:"準2級",2:"2級",1.5:"準1級",1:"1級"};
+var GSET={e:[10,9,8,7,6,5],m:[4,3],h:[2.5,2],t:[1.5,1]};
+function gradeOf(t){var g=99;
+  for(var ch of t){if(/[一-鿿]/.test(ch)){var c=CODE[ch];if(c===undefined)return null;if(c<g)g=c}}
+  return g===99?null:g}
+var MODES={j:{name:"熟語の読み",glyph:"熟",desc:"二字以上の熟語をひらがなで答える"},
+           w:{name:"送りがなの語",glyph:"和",desc:"動詞・形容詞を送りがなつきの読みで答える"},
+           k:{name:"音読み・訓読み",glyph:"音",desc:"漢字一字から、指定された読みを答える"}};
+var ITEMS=[],KANJI=[],IDS={};
+function addWords(txt,mode){txt.split("\n").forEach(function(l){
+  var p=l.split("|"),g=gradeOf(p[0]),id=mode+":"+p[0];
+  if(g===null||IDS[id])return;IDS[id]=1;
+  var rs=p[1].split("/");
+  ITEMS.push({id:id,mode:mode,g:g,lv:p[3]?+p[3]:null,text:p[0],show:rs,answers:rs.map(norm),meaning:p[2]})})}
+addWords(JT,"j");addWords(WT,"w");
+KT.forEach(function(e){
+  var g=gradeOf(e[0]);if(g===null)return;
+  var on=e[1].split(","),kun=e[2].split(","),lv=e[3]||null;
+  var kd=kun.map(function(s){return s.indexOf(".")>-1?s.replace(".","(")+")":s});
+  var ka=[];kun.forEach(function(s){var i=s.indexOf(".");if(i>-1){ka.push(norm(s.slice(0,i)));ka.push(norm(s))}else ka.push(norm(s))});
+  var o={id:"k:"+e[0]+":on",mode:"k",kind:"on",g:g,lv:lv,text:e[0],show:on,answers:on.map(norm),meaning:e[4],on:on,kun:kd};
+  var u={id:"k:"+e[0]+":kun",mode:"k",kind:"kun",g:g,lv:lv,text:e[0],show:kd,answers:ka,meaning:e[4],on:on,kun:kd};
+  ITEMS.push(o,u);KANJI.push({c:e[0],g:g,lv:lv,on:on,kun:kd,meaning:e[4],ids:[o.id,u.id]});
+});
+
+/* ---------- storage ---------- */
+var KEY="yomi-dojo-v1",mem=null;
+var P={sys:"kk",gr:[10,9,8],lv:[5],stats:{},days:[],best:0,hide:false};
+try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&typeof o==="object")Object.keys(P).forEach(function(k){if(o[k]!==undefined)P[k]=o[k]})}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(P))}catch(e){mem=P}}
+function today(){var d=new Date(),p=function(n){return(n<10?"0":"")+n};return d.getFullYear()+"-"+p(d.getMonth()+1)+"-"+p(d.getDate())}
+function streak(){
+  var set={};P.days.forEach(function(d){set[d]=1});var d=new Date(),n=0;
+  var f=function(x){var p=function(n){return(n<10?"0":"")+n};return x.getFullYear()+"-"+p(x.getMonth()+1)+"-"+p(x.getDate())};
+  if(!set[f(d)])d.setDate(d.getDate()-1);
+  while(set[f(d)]){n++;d.setDate(d.getDate()-1)}
+  return n}
+function record(it,ok){
+  var s=P.stats[it.id]||(P.stats[it.id]={ok:0,ng:0,st:0});
+  if(ok){s.ok++;s.st++;s.w=0}else{s.ng++;s.st=0;s.w=1}
+  var t=today();if(P.days.indexOf(t)<0){P.days.push(t);P.days=P.days.slice(-90)}
+  save()}
+function status(id){var s=P.stats[id];if(!s)return"new";var w=s.w===undefined?(s.ng>0&&s.st===0):s.w===1;if(w)return"review";if(s.st>=3)return"mastered";return"learning"}
+var STL={new:"新規",learning:"学習中",review:"要復習",mastered:"習得"};
+
+/* ---------- pools ---------- */
+function inLv(it){return P.gr.indexOf(it.g)>-1}
+function tagOf(it){return GL[it.g]}
+function selLabel(){return GORDER.filter(function(g){return P.gr.indexOf(g)>-1}).map(function(g){return GL[g]}).join(" ")}
+function pool(mode){
+  if(mode==="review")return ITEMS.filter(function(it){return status(it.id)==="review"});
+  if(mode==="mix")return ITEMS.filter(inLv);
+  return ITEMS.filter(function(it){return it.mode===mode&&inLv(it)})}
+function sample(arr,n){
+  var a=arr.map(function(it){var s=status(it.id);return{it:it,w:s==="new"?3:s==="review"?5:s==="learning"?2:.5}}),out=[];
+  while(out.length<n&&a.length){var t=a.reduce(function(x,y){return x+y.w},0),r=Math.random()*t,i=0;
+    for(;i<a.length-1;i++){r-=a[i].w;if(r<=0)break}
+    out.push(a[i].it);a.splice(i,1)}
+  return out}
+
+/* ---------- state ---------- */
+var view="home",S=null,timer=null,tout=null,lastComp=0,composing=false,resetArm=false,book={tab:"j",q:""};
+var app=$("app");
+function stop(){clearInterval(timer);clearTimeout(tout);timer=tout=null}
+function go(v){stop();view=v;render()}
+
+/* ---------- views ---------- */
+function render(){
+  if(view==="home")home();else if(view==="quiz")quiz();else if(view==="result")result();else if(view==="book")bookView();
+  window.scrollTo(0,0)}
+
+function home(){
+  var rv=ITEMS.filter(function(it){return status(it.id)==="review"}).length;
+  var inl=ITEMS.filter(inLv),mastered=inl.filter(function(it){return status(it.id)==="mastered"}).length;
+  var tok=0,tng=0;Object.keys(P.stats).forEach(function(k){tok+=P.stats[k].ok;tng+=P.stats[k].ng});
+  var acc=tok+tng?Math.round(tok/(tok+tng)*100)+"%":"–";
+  var h='<div class="top"><div><h1 class="brand">読み道場</h1><div class="sub">漢検の級で選ぶ、漢字の「読み」特訓</div></div>'+
+    '<div class="chip">連続 <b>'+streak()+'</b> 日</div></div>';
+  h+='<div><div class="label" style="margin-bottom:8px">出題する級(漢検)</div><div class="levels">'+GORDER.map(function(l){
+      var n=ITEMS.filter(function(it){return it.g===l}).length;
+      return'<button class="lv" data-act="lv" data-v="'+l+'" aria-pressed="'+(P.gr.indexOf(l)>-1)+'"><span>'+GL[l]+'</span><small>'+n+'問</small></button>'}).join("")+'</div>'+
+    '<div class="presets"><button class="link" data-act="preset" data-v="e">小学校(10〜5級)</button><button class="link" data-act="preset" data-v="m">中学(4・3級)</button><button class="link" data-act="preset" data-v="h">高校〜(準2・2級)</button><button class="link" data-act="preset" data-v="t">最上級(準1・1級)</button></div></div>';
+  h+='<div class="modes">'+["j","k","w"].map(function(m){
+    var pl=pool(m),ms=pl.filter(function(it){return status(it.id)==="mastered"}).length,pc=pl.length?Math.round(ms/pl.length*100):0;
+    return'<button class="mode" data-act="start" data-v="'+m+'"><span class="glyph">'+MODES[m].glyph+'</span><span class="t">'+MODES[m].name+
+      '</span><span class="n">習得 '+ms+' / '+pl.length+'</span><span class="d">'+MODES[m].desc+'</span><span class="bar"><i style="width:'+pc+'%"></i></span></button>'}).join("")+'</div>';
+  h+='<div class="two"><button class="act'+(rv?" hot":"")+'" data-act="start" data-v="review"'+(rv?"":" disabled")+'><div class="t">間違えた問題の復習</div><div class="d">'+(rv?rv+" 問が復習待ち":"復習する問題はありません")+'</div></button>'+
+    '<button class="act" data-act="start" data-v="challenge"><div class="t">60秒チャレンジ</div><div class="d">ベスト '+(P.best?P.best+" 問":"記録なし")+'</div></button></div>';
+  h+='<button class="act" data-act="book"><div class="t">単語帳</div><div class="d">熟語・語・漢字の読みを一覧で確認する</div></button>';
+  h+='<div class="stats"><div><b>'+mastered+'</b><span>習得(選択レベル)</span></div><div><b>'+acc+'</b><span>通算の正答率</span></div><div><b>'+(tok+tng)+'</b><span>解いた回数</span></div></div>';
+  h+='<div class="foot"><span>級は漢検の配当漢字表をもとに、語を構成する漢字のうち最も上の級で分けています。3回連続で正解すると「習得」になります。進捗はこのブラウザに保存されます。</span><button class="link" data-act="reset">'+(resetArm?"本当に消す(もう一度押す)":"進捗をリセット")+'</button></div>';
+  app.innerHTML=h}
+
+function startSession(m){
+  stop();
+  if(m==="challenge"){
+    var pl=pool("mix");S={mode:m,ch:true,pool:pl,score:0,miss:0,wrong:[],cur:null,last:null,answered:false,endAt:Date.now()+60000};
+    S.cur=pick();view="quiz";render();
+    timer=setInterval(tick,100);return}
+  var p=pool(m);if(!p.length)return;
+  var q=sample(p,Math.min(10,p.length));
+  S={mode:m,ch:false,queue:q,i:0,score:0,wrong:[],cur:q[0],answered:false};view="quiz";render()}
+function pick(){
+  var p=S.pool,it,n=0;do{it=p[Math.floor(Math.random()*p.length)];n++}while(S.last&&it.id===S.last&&p.length>1&&n<20);
+  S.last=it.id;return it}
+function tick(){
+  var left=S.endAt-Date.now();
+  if(left<=0){finish();return}
+  var b=$("tbar"),t=$("tleft");if(b)b.style.width=(left/600)+"%";if(t)t.textContent=Math.ceil(left/1000)+"秒"}
+
+function cellsHtml(txt){var a=Array.from(txt);return'<div class="cells" style="--n:'+Math.max(a.length,2)+'" aria-label="'+esc(txt)+'">'+a.map(function(c){return'<div class="cell"><span>'+esc(c)+'</span></div>'}).join("")+'</div>'}
+function promptHtml(it){
+  if(it.mode==="k")return'<p class="prompt">「'+esc(it.text)+'」の<b>'+(it.kind==="on"?"音読み":"訓読み")+'</b>を答えてください<small>'+
+    (it.kind==="on"?"カタカナの読みでも、ひらがなで入力してOK。どれか1つでも正解":"送りがなは省略してもOK。どれか1つでも正解")+'</small></p>';
+  if(it.mode==="w")return'<p class="prompt">読みを<b>ひらがな</b>で入力<small>送りがなも含めて答えてください</small></p>';
+  return'<p class="prompt">読みを<b>ひらがな</b>で入力<small>'+(it.show.length>1?"読みが複数ある語です。どれか1つでOK":"熟語の読みを答えてください")+'</small></p>'}
+
+function quiz(){
+  var it=S.cur,h='<div class="bar-top"><button class="ghost" data-act="home">← ホーム</button>';
+  if(S.ch)h+='<div class="score">正解 '+S.score+' 問 · <span id="tleft">60秒</span></div></div><div class="meter time"><i id="tbar" style="width:100%"></i></div>';
+  else h+='<div class="score">'+(S.i+1)+' / '+S.queue.length+'</div></div><div class="meter"><i style="width:'+(S.i/S.queue.length*100)+'%"></i></div>';
+  h+='<section class="qcard"><div class="tag">'+(S.ch?"チャレンジ":(S.mode==="review"?"復習":MODES[it.mode].name))+' · '+tagOf(it)+'</div>'+cellsHtml(it.text)+promptHtml(it)+
+    '<form id="f" autocomplete="off"><input id="ans" type="text" lang="ja" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="こたえ" aria-label="読みを入力"><button class="primary" type="submit" id="go">こたえる</button></form>'+
+    '<button class="link" data-act="skip" id="skip">'+(S.ch?"パス":"わからない")+'</button><div id="fb" aria-live="polite" style="width:100%"></div></section>';
+  app.innerHTML=h;
+  var f=$("f"),inp=$("ans");
+  inp.addEventListener("compositionstart",function(){composing=true});
+  inp.addEventListener("compositionend",function(){composing=false;lastComp=Date.now()});
+  f.addEventListener("submit",function(e){e.preventDefault();if(composing||Date.now()-lastComp<60||S.answered)return;answer(inp.value)});
+  inp.focus()}
+
+function readingHtml(it){
+  if(it.mode==="k")return'<div class="a">音 '+it.on.join("・")+'　訓 '+it.kun.join("・")+'</div>';
+  return'<div class="a">'+it.show.join("・")+'</div>'}
+function answer(val){
+  var it=S.cur;if(S.answered)return;
+  var ok=val!==null&&it.answers.indexOf(norm(val))>-1;
+  if(val!==null&&!norm(val)){return}
+  S.answered=true;S.answeredAt=Date.now();record(it,ok);
+  if(ok)S.score++;else{S.wrong.push(it);S.miss=(S.miss||0)+1}
+  var fb=$("fb");
+  fb.innerHTML='<div class="fb '+(ok?"ok":"ng")+'"><div class="h">'+(ok?"正解":(val===null?"答えを確認":"ちがいます"+(val.trim()?"(あなたの答え: "+esc(val.trim())+")":"")))+'</div>'+
+    readingHtml(it)+'<div class="m">'+(it.mode==="k"?esc(it.text)+" · ":"")+esc(it.meaning)+'</div></div>'+
+    (S.ch?"":'<button class="primary next" data-act="next" style="margin-top:10px;width:100%">'+(S.i+1>=S.queue.length?"結果を見る":"つぎへ")+'(Enter)</button>');
+  $("ans").disabled=true;$("go").disabled=true;$("skip").hidden=true;
+  if(S.ch){clearTimeout(tout);tout=setTimeout(next,ok?450:1700)}}
+function next(){
+  if(!S||view!=="quiz"||!S.answered)return;
+  clearTimeout(tout);
+  if(S.ch){S.cur=pick();S.answered=false;var left=S.endAt-Date.now();if(left<=0){finish();return}quiz();tick();return}
+  S.i++;if(S.i>=S.queue.length){finish();return}
+  S.cur=S.queue[S.i];S.answered=false;quiz()}
+function finish(){
+  stop();if(!S)return;
+  if(S.ch&&S.score>P.best){S.newBest=true;P.best=S.score;save()}
+  view="result";render()}
+
+function result(){
+  var n=S.ch?S.score+(S.miss||0):S.queue.length,acc=n?Math.round(S.score/n*100):0;
+  var h='<div class="result"><div class="label">'+(S.ch?"60秒チャレンジ":MODES[S.mode]?MODES[S.mode].name:"復習")+' 終了</div>'+
+    '<div class="big">'+S.score+(S.ch?'<span style="font-size:24px"> 問正解</span>':' / '+n)+'</div>'+
+    '<div>正答率 '+acc+'%'+(S.ch&&S.newBest?' · <b style="color:var(--ok)">ベスト更新</b>':(S.ch?' · ベスト '+P.best+' 問':''))+'</div></div>';
+  if(S.wrong.length){h+='<div class="label">間違えた問題(復習リストに追加されます)</div><ul class="list">'+S.wrong.map(function(it){
+    return'<li><span class="k">'+esc(it.text)+'</span><span class="r">'+(it.mode==="k"?(it.kind==="on"?"音 ":"訓 ")+it.show.join("・"):it.show.join("・"))+'<div class="m">'+esc(it.meaning)+'</div></span></li>'}).join("")+'</ul>'}
+  else h+='<div class="empty">'+(S.score>0?'全問正解です。':'回答がありませんでした。')+'</div>';
+  h+='<div class="two"><button class="act hot" data-act="again"><div class="t">もう一度</div></button><button class="act" data-act="home"><div class="t">ホームへ</div></button></div>';
+  app.innerHTML=h}
+
+function rowStatus(ids){
+  var s=ids.map(status);
+  if(s.indexOf("review")>-1)return"review";
+  if(s.every(function(x){return x==="mastered"}))return"mastered";
+  if(s.every(function(x){return x==="new"}))return"new";
+  return"learning"}
+function bookView(){
+  var rows=[];
+  if(book.tab==="k"){KANJI.forEach(function(k){if(!inLv(k))return;
+    rows.push({k:k.c,r:"音 "+k.on.join("・")+"　訓 "+k.kun.join("・"),m:k.meaning,st:rowStatus(k.ids)})})}
+  else ITEMS.forEach(function(it){if(it.mode!==book.tab||!inLv(it))return;rows.push({k:it.text,r:it.show.join("・"),m:it.meaning,st:status(it.id)})});
+  var q=book.q.trim().toLowerCase();
+  if(q){var qn=norm(q);rows=rows.filter(function(r){return r.k.indexOf(q)>-1||norm(r.r).indexOf(qn)>-1||r.m.toLowerCase().indexOf(q)>-1})}
+  var h='<div class="bar-top"><button class="ghost" data-act="home">← ホーム</button><div class="score">単語帳 · '+rows.length+' 件</div></div>';
+  h+='<div class="tabs">'+["j","w","k"].map(function(m){return'<button class="tab" data-act="tab" data-v="'+m+'" aria-pressed="'+(book.tab===m)+'">'+MODES[m].name+'</button>'}).join("")+'</div>';
+  h+='<div class="tools"><input id="q" type="search" placeholder="漢字・読み・英語で検索" value="'+esc(book.q)+'" style="font-size:15px;padding:8px 12px"><label><input type="checkbox" id="hide"'+(P.hide?" checked":"")+'> 読みを隠す</label></div>';
+  h+='<div class="label">出題範囲: '+selLabel()+'(ホームで変更)'+(P.hide?'　行をタップすると読みが見えます':'')+'</div>';
+  h+=rows.length?'<ul class="list book'+(P.hide?" hide":"")+'" id="bl">'+rows.map(function(r){
+    return'<li data-act="open"><span class="k">'+esc(r.k)+'</span><span class="r"><span class="rd">'+esc(r.r)+'</span><div class="m">'+esc(r.m)+'</div></span><span class="st '+r.st+'">'+STL[r.st]+'</span></li>'}).join("")+'</ul>':'<div class="empty">該当する項目がありません。</div>';
+  app.innerHTML=h;
+  var qi=$("q");qi.addEventListener("input",function(){book.q=qi.value;var pos=qi.selectionStart;bookView();var n=$("q");n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}});
+  $("hide").addEventListener("change",function(e){P.hide=e.target.checked;save();bookView()})}
+
+/* ---------- events ---------- */
+app.addEventListener("click",function(e){
+  var t=e.target.closest("[data-act]");if(!t||t.disabled)return;
+  var a=t.getAttribute("data-act"),v=t.getAttribute("data-v");
+  if(a==="lv"){var l=+v,arr=P.gr,i=arr.indexOf(l);if(i>-1){if(arr.length>1)arr.splice(i,1)}else arr.push(l);save();home()}
+  else if(a==="preset"){P.gr=GSET[v].slice();save();home()}
+  else if(a==="start"){resetArm=false;startSession(v)}
+  else if(a==="home"){resetArm=false;go("home")}
+  else if(a==="book"){go("book")}
+  else if(a==="tab"){book.tab=v;bookView()}
+  else if(a==="open"){t.classList.toggle("open")}
+  else if(a==="skip"){answer(null)}
+  else if(a==="next"){next()}
+  else if(a==="again"){startSession(S.ch?"challenge":S.mode)}
+  else if(a==="reset"){if(resetArm){P.stats={};P.days=[];P.best=0;save();resetArm=false}else resetArm=true;home()}});
+document.addEventListener("keydown",function(e){
+  if(e.key==="Enter"&&view==="quiz"&&S&&S.answered&&!S.ch&&!e.isComposing&&Date.now()-S.answeredAt>250){e.preventDefault();next()}});
+render();
+})();
+</script>
+
+</body>
+</html>
